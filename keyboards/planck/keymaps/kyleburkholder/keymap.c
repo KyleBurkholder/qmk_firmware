@@ -34,8 +34,8 @@ enum planck_keycodes {
 #define LOWER MO(_LOWER)
 #define RAISE MO(_RAISE)
 
-#define FUNC_L LT(_FUNCTIONS, KC_LBRC)
-#define FUNC_R LT(_FUNCTIONS, KC_RBRC)
+#define CTL_LBR LCTL_T(KC_LBRC)
+#define CTL_RBR RCTL_T(KC_RBRC)
 
 // Dashes (macOS)
 #define KC_NDSH LALT(KC_MINS)
@@ -44,8 +44,8 @@ enum planck_keycodes {
 
 // tapdance keycodes
 enum td_keycodes {
-  CTL_LCB,
-  CTL_RCB
+  FN_LCB,
+  FN_RCB
 };
 
 // define a type containing as many tapdance states as you need
@@ -64,10 +64,10 @@ static td_state_t td_state;
 int cur_dance (qk_tap_dance_state_t *state);
 
 // `finished` and `reset` functions for each tapdance keycode
-void ctllcb_finished (qk_tap_dance_state_t *state, void *user_data);
-void ctllcb_reset (qk_tap_dance_state_t *state, void *user_data);
-void ctlrcb_finished (qk_tap_dance_state_t *state, void *user_data);
-void ctlrcb_reset (qk_tap_dance_state_t *state, void *user_data);
+void fnlcb_finished (qk_tap_dance_state_t *state, void *user_data);
+void fnlcb_reset (qk_tap_dance_state_t *state, void *user_data);
+void fnrcb_finished (qk_tap_dance_state_t *state, void *user_data);
+void fnrcb_reset (qk_tap_dance_state_t *state, void *user_data);
 
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -81,15 +81,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |   (  |      |      |      |      |      |      |      |      |      |      |  )   |
  * | Shift|   Z  |   X  |   C  |   V  |   B  |   N  |   M  |   ,  |   .  |   /  |Shift |
  * |------+------+------+------+------+------+------+------+------+------+------+------|
- * |   [  |   {  |      |      |      |      |      |      |      |      |   }  |  ]   |
+ * |   {  |   [  |      |      |      |      |      |      |      |      |   ]  |  }   |
  * | Func | Ctrl | GUI  | Alt  |Lower |Space | Enter|Raise | Alt  | GUI  | Ctrl | Func |
  * `-----------------------------------------------------------------------------------'
  */
 [_QWERTY] = LAYOUT_planck_grid(
-    KC_TAB,  KC_Q,        KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,     KC_BSPC,
-    KC_ESC,  KC_A,        KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN,  KC_QUOT,
-    KC_LSPO, KC_Z,        KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,  KC_RSPC,
-    FUNC_L,  TD(CTL_LCB), KC_LALT, KC_LGUI, LOWER,  KC_SPC,  KC_ENT,  RAISE,   KC_RGUI, KC_RALT,  TD(CTL_RCB),  FUNC_R
+    KC_TAB,     KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,     KC_BSPC,
+    KC_ESC,     KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN,  KC_QUOT,
+    KC_LSPO,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,  KC_RSPC,
+    TD(FN_LCB), CTL_LBR, KC_LALT, KC_LGUI, LOWER,  KC_SPC,  KC_ENT,  RAISE,   KC_RGUI, KC_RALT,  CTL_RBR,  TD(FN_RCB)
 ),
 
 /* Lower
@@ -183,14 +183,14 @@ int cur_dance (qk_tap_dance_state_t *state) {
 
 // handle the possible states for each tapdance keycode you define:
 
-void ctllcb_finished (qk_tap_dance_state_t *state, void *user_data) {
+void fnlcb_finished (qk_tap_dance_state_t *state, void *user_data) {
   td_state = cur_dance(state);
   switch (td_state) {
     case SINGLE_TAP:
       register_code16(KC_LCBR);
       break;
     case SINGLE_HOLD:
-      register_mods(MOD_BIT(KC_LCTRL)); // for a layer-tap key, use `layer_on(_MY_LAYER)` here
+      layer_on(_FUNCTIONS); // for a layer-tap key, use `layer_on(_MY_LAYER)` here
       break;
     case DOUBLE_SINGLE_TAP: // allow nesting of 2 parens `((` within tapping term
       tap_code16(KC_LCBR);
@@ -198,27 +198,27 @@ void ctllcb_finished (qk_tap_dance_state_t *state, void *user_data) {
   }
 }
 
-void ctllcb_reset (qk_tap_dance_state_t *state, void *user_data) {
+void fnlcb_reset (qk_tap_dance_state_t *state, void *user_data) {
   switch (td_state) {
     case SINGLE_TAP:
       unregister_code16(KC_LCBR);
       break;
     case SINGLE_HOLD:
-      unregister_mods(MOD_BIT(KC_LCTRL)); // for a layer-tap key, use `layer_off(_MY_LAYER)` here
+      layer_off(_FUNCTIONS); // for a layer-tap key, use `layer_off(_MY_LAYER)` here
       break;
     case DOUBLE_SINGLE_TAP:
       unregister_code16(KC_LCBR);
   }
 }
 
-void ctlrcb_finished (qk_tap_dance_state_t *state, void *user_data) {
+void fnrcb_finished (qk_tap_dance_state_t *state, void *user_data) {
   td_state = cur_dance(state);
   switch (td_state) {
     case SINGLE_TAP:
       register_code16(KC_RCBR);
       break;
     case SINGLE_HOLD:
-      register_mods(MOD_BIT(KC_RCTRL)); // for a layer-tap key, use `layer_on(_MY_LAYER)` here
+      layer_on(_FUNCTIONS); // for a layer-tap key, use `layer_on(_MY_LAYER)` here
       break;
     case DOUBLE_SINGLE_TAP: // allow nesting of 2 parens `((` within tapping term
       tap_code16(KC_RCBR);
@@ -226,13 +226,13 @@ void ctlrcb_finished (qk_tap_dance_state_t *state, void *user_data) {
   }
 }
 
-void ctlrcb_reset (qk_tap_dance_state_t *state, void *user_data) {
+void fnrcb_reset (qk_tap_dance_state_t *state, void *user_data) {
   switch (td_state) {
     case SINGLE_TAP:
       unregister_code16(KC_RCBR);
       break;
     case SINGLE_HOLD:
-      unregister_mods(MOD_BIT(KC_RCTRL)); // for a layer-tap key, use `layer_off(_MY_LAYER)` here
+      layer_off(_FUNCTIONS); // for a layer-tap key, use `layer_off(_MY_LAYER)` here
       break;
     case DOUBLE_SINGLE_TAP:
       unregister_code16(KC_RCBR);
@@ -241,6 +241,6 @@ void ctlrcb_reset (qk_tap_dance_state_t *state, void *user_data) {
 
 // define `ACTION_TAP_DANCE_FN_ADVANCED()` for each tapdance keycode, passing in `finished` and `reset` functions
 qk_tap_dance_action_t tap_dance_actions[] = {
-  [CTL_LCB] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, ctllcb_finished, ctllcb_reset),
-  [CTL_RCB] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, ctlrcb_finished, ctlrcb_reset)
+  [FN_LCB] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, fnlcb_finished, fnlcb_reset),
+  [FN_RCB] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, fnrcb_finished, fnrcb_reset)
 };
